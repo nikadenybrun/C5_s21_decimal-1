@@ -39,7 +39,8 @@ void setSign(s21_decimal *value, int sign) {
 
 int getScale(s21_decimal value) {
   setSign(&value, 0);
-  int scale = (value.bits[3]) >> 16;
+  (value.bits[3]) >>= 16;
+  int scale = value.bits[3] & 0b1000000000011111;
   return scale;
 }
 

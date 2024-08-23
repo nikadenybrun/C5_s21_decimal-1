@@ -38,7 +38,7 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     }
   }
 
-  check_scale_and_mantis(&res_big, &scale, sign, &err);
+  check_scale_and_mantis(&res_big, &scale, &sign, &err);
   if (!err)
     for (int i = 0; i < 3; i++) {
       result->bits[i] |= res_big.bits[i];
@@ -51,20 +51,20 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
   return err;
 }
 
-void check_scale_and_mantis(s21_big_decimal *res_big, int *scale, int sign,
+void check_scale_and_mantis(s21_big_decimal *res_big, int *scale, int *sign,
                             int *err) {
   s21_big_decimal bit1 = bigInit();
   bit1.bits[0] = 1u;
   s21_big_decimal buff_res_big = *res_big;
   unsigned int low = 0;
   while (*scale > 28) {
-    low = (unsigned)res_big->bits[0] % 10;
+    low = (unsigned)res_big->bits[0] % 10u;
     make_scale_less(res_big);
     *scale = *scale - 1;
   }
 
-  if (((res_big->bits[0] % 10) % 2 == 0 && low > 5) ||
-      ((res_big->bits[0] % 10) % 2 == 1 && low > 4)) {
+  if ((((unsigned)res_big->bits[0] % 10) % 2 == 0 && low > 5) ||
+      (((unsigned)res_big->bits[0] % 10) % 2 == 1 && low > 4)) {
     bitwise_add(*res_big, bit1, &buff_res_big);
     *res_big = buff_res_big;
   }
@@ -84,11 +84,18 @@ void check_scale_and_mantis(s21_big_decimal *res_big, int *scale, int sign,
   }
 
   for (int i = 3; i < 7; i++) {
-    if (res_big->bits[i] != 0U && sign) {
+    if (res_big->bits[i] != 0U && *sign) {
       *err = 2;
-    } else if (res_big->bits[i] != 0U && !sign) {
+
+    } else if (res_big->bits[i] != 0U && *sign == 0) {
       *err = 1;
     }
+  }
+  if (s21_big_decimal_zero(*res_big)) {
+    setbigScale(res_big, 0);
+    setbigSign(res_big, 0);
+    *scale = 0;
+    *sign = 0;
   }
 }
 
@@ -122,9 +129,7 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
       sign = sign1 == 1 ? 1 : 0;
     }
   }
-
-  check_scale_and_mantis(&res_big, &scale, sign, &err);
-
+  check_scale_and_mantis(&res_big, &scale, &sign, &err);
   if (!err) {
     for (int i = 0; i < 3; i++) result->bits[i] |= res_big.bits[i];
     setScale(result, scale);
@@ -136,10 +141,12 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
 
 void bitwise_add(s21_big_decimal value_1, s21_big_decimal value_2,
                  s21_big_decimal *result) {
-  unsigned boolean = 0;
+  *result = bigInit();
+  unsigned int boolean = 0;
   for (int i = 0;
        i < 32 * (int)(sizeof(s21_big_decimal) / sizeof(unsigned) - 1); i++) {
-    unsigned res_bit = getbigBit(value_1, i) + getbigBit(value_2, i) + boolean;
+    unsigned int res_bit =
+        getbigBit(value_1, i) + getbigBit(value_2, i) + boolean;
     boolean = res_bit / 2;
     res_bit %= 2;
     setbigBit(result, i, res_bit);
@@ -164,7 +171,8 @@ void normalization(s21_big_decimal *value_1, int norm_val) {
   }
 }
 
-int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+int s21_mul(s21_decimal value_1, s21_decimal value_2,
+            s21_decimal *result) {  // FAIL
   make_zero(result);
   s21_big_decimal value_big_1 = bigConvert(value_1);
   s21_big_decimal value_big_2 = bigConvert(value_2);
@@ -185,7 +193,7 @@ int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     bitwise_mul(value_big_1, value_big_2, &res_big);
   }
 
-  check_scale_and_mantis(&res_big, &scale, sign, &err);
+  check_scale_and_mantis(&res_big, &scale, &sign, &err);
   if (!err) {
     for (int i = 0; i < 3; i++) result->bits[i] |= res_big.bits[i];
   }
@@ -200,7 +208,7 @@ int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
 void bitwise_mul(s21_big_decimal value_1, s21_big_decimal value_2,
                  s21_big_decimal *result) {
   s21_big_decimal res_big = bigInit();
-  unsigned boolean = 0;
+  unsigned int boolean = 0;
   for (int i = 0; i < 32 * 7; i++) {
     if (getbigBit(value_2, 32 * 7 - i - 1) || boolean) {
       boolean++;
@@ -218,7 +226,8 @@ void bitwise_mul(s21_big_decimal value_1, s21_big_decimal value_2,
   }
 }
 
-int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+int s21_div(s21_decimal value_1, s21_decimal value_2,
+            s21_decimal *result) {  // fixed scal1 < scale2
   make_zero(result);
   s21_big_decimal value_big_1 = bigConvert(value_1);
   s21_big_decimal value_big_2 = bigConvert(value_2);
@@ -239,12 +248,16 @@ int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     }
     setbigScale(&value_big_1, scale_1);
     int scale = scale_1 - scale_2;
+    while (scale_1 - scale_2 < 0) {
+      value_big_1 = shift_ten(value_big_1);
+      scale_1++;
+    }
     setbigScale(&res_big, scale);
     if (!s21_decimal_is_zero(value_1)) {
       bitwise_div(value_big_1, value_big_2, &res_big, &err);
       if (err == 5) err = 0;
       scale = getbigScale(res_big);
-      check_scale_and_mantis(&res_big, &scale, sign, &err);
+      check_scale_and_mantis(&res_big, &scale, &sign, &err);
     }
     if (!err) {
       for (int i = 0; i < 3; i++) result->bits[i] |= res_big.bits[i];

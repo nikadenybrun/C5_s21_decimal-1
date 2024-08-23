@@ -1,5 +1,5 @@
-#ifndef CHECK_S21_ROUND_H
-#define CHECK_S21_ROUND_H
+#ifndef CHECK_S21_TEST_H
+#define CHECK_S21_TEST_H
 
 #include <check.h>
 #include <math.h>
@@ -9,6 +9,6 @@
 
 #include "../s21_decimal.h"
 
-int test_round();
+int test();
 
 #endif

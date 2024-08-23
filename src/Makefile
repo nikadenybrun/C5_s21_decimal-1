@@ -3,7 +3,7 @@ FLAGS = -Wall -Wextra -Werror -std=c11
 SANITIZE=-fsanitize=address -g
 TST_LIBS = -lcheck
 ifeq ($(shell uname), Linux)
-	TST_LIBS += -lpthread -lrt -lsubunit
+	TST_LIBS += -lpthread -lrt 
 endif
 LIB_NAME = s21_decimal
 

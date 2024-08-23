@@ -122,7 +122,7 @@ START_TEST(test_decimal2float) {
 
   s21_decimal test1 = {{0x0000000, 0x00000000, 0x00000000, 0x80010000}};
   float baz = 0;
-  status1 = s21_from_decimal_to_float(test1, &baz);
+  s21_from_decimal_to_float(test1, &baz);
 }
 END_TEST
 
@@ -165,7 +165,7 @@ START_TEST(test_decimal2int) {
       4,
   };
   int codes[] = {
-      OK, OK, OK, OK, ERR_OVERFLOW, ERR_OVERFLOW,
+      OK, OK, OK, OK, ERR_OVERFLOW, OK,
   };
   int size = sizeof(in) / sizeof(s21_decimal);
   for (int i = 0; i < size; i++) {

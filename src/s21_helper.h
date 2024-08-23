@@ -88,7 +88,7 @@ void div_help(s21_big_decimal *tmp1, s21_big_decimal *tmp2, int *scale,
 void div_without_left(s21_big_decimal value_1, s21_big_decimal value_2,
                       s21_big_decimal *result);
 void make_scale_less(s21_big_decimal *res_big);
-void check_scale_and_mantis(s21_big_decimal *res_big, int *scale, int sign,
+void check_scale_and_mantis(s21_big_decimal *res_big, int *scale, int *sign,
                             int *err);
 void make_zero(s21_decimal *dec);
 s21_decimal smallInit();
